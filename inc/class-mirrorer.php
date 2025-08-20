@@ -100,6 +100,20 @@ class Mirrorer {
 				$args[] = '-erobots=off';
 			}
 
+			// Add wait/random-wait and level args based on consolidated settings.
+			$wait_time = (int) get_option( 'static_mirror_wait_time', 0 );
+			if ( $wait_time > 0 ) {
+				$args[] = sprintf( '--wait=%d', $wait_time );
+			}
+			$random_wait = (int) get_option( 'static_mirror_random_wait', 0 );
+			if ( $random_wait > 0 ) {
+				$args[] = sprintf( '--random-wait=%d', $random_wait );
+			}
+			$level = (int) get_option( 'static_mirror_level', 0 );
+			if ( $level > 0 ) {
+				$args[] = sprintf( '--level=%d', $level );
+			}
+
 			$cmd = sprintf( 'wget %s %s 2>&1', implode( ' ', $args ), escapeshellarg( esc_url_raw( $url ) ) );
 
 			$data = shell_exec( $cmd );

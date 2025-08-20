@@ -353,7 +353,14 @@ class Plugin {
 		$start_time = time();
 
 		$destination = $this->get_destination_directory() . date( '/Y/m/j/H-i-s/' );
-		$mirrorer->create( $urls, $destination, $recursive );
+		$settings = get_option( 'static_mirror_settings', array() );
+		$recursive_flag = $recursive;
+		if ( $recursive ) {
+			$recursive_flag = isset( $settings['recursive_scheduled'] ) ? (bool) $settings['recursive_scheduled'] : true;
+		} else {
+			$recursive_flag = isset( $settings['recursive_immediate'] ) ? (bool) $settings['recursive_immediate'] : false;
+		}
+		$mirrorer->create( $urls, $destination, $recursive_flag );
 
 		/**
 		 * Running mirror() probably took quite a while, so lets

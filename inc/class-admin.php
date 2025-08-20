@@ -106,6 +106,8 @@ class Admin {
 		add_settings_section( 'sm_section_crawling', __( 'Crawling', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
 		add_settings_section( 'sm_section_exclusions', __( 'Exclusions', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
 		add_settings_section( 'sm_section_resources', __( 'Resources', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
+		add_settings_section( 'sm_section_performance', __( 'Performance', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
+		add_settings_section( 'sm_section_behavior', __( 'Behavior', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
 
 		add_settings_field( 'starting_urls', __( 'Starting URLs', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_general', array( 'key' => 'starting_urls', 'desc' => __( 'One per line.', 'static-mirror' ) ) );
 
@@ -117,6 +119,13 @@ class Admin {
 		add_settings_field( 'reject_patterns', __( 'URL Exclusion Patterns', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_exclusions', array( 'key' => 'reject_patterns', 'desc' => __( 'Regex (with delimiters) or substring, one per line.', 'static-mirror' ) ) );
 
 		add_settings_field( 'resource_domains', __( 'Allowed resource domains', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_resources', array( 'key' => 'resource_domains', 'desc' => __( 'One host per line.', 'static-mirror' ) ) );
+
+		add_settings_field( 'wait_seconds', __( 'Wait between requests (seconds)', 'static-mirror' ), array( $this, 'field_input_number' ), 'static-mirror-settings', 'sm_section_performance', array( 'key' => 'wait_seconds', 'min' => 0 ) );
+		add_settings_field( 'random_wait', __( 'Randomize wait', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_performance', array( 'key' => 'random_wait' ) );
+		add_settings_field( 'level', __( 'Crawl depth (recursive only)', 'static-mirror' ), array( $this, 'field_input_number' ), 'static-mirror-settings', 'sm_section_performance', array( 'key' => 'level', 'min' => 0 ) );
+
+		add_settings_field( 'recursive_scheduled', __( 'Recursive on scheduled mirrors', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_behavior', array( 'key' => 'recursive_scheduled' ) );
+		add_settings_field( 'recursive_immediate', __( 'Recursive on immediate mirrors', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_behavior', array( 'key' => 'recursive_immediate' ) );
 	}
 
 	public function sanitize_settings( $input ) {
@@ -129,6 +138,11 @@ class Admin {
 		$output['no_check_certificate'] = ! empty( $input['no_check_certificate'] ) ? 1 : 0;
 		$output['reject_patterns'] = isset( $input['reject_patterns'] ) ? trim( (string) $input['reject_patterns'] ) : '';
 		$output['resource_domains'] = isset( $input['resource_domains'] ) ? trim( (string) $input['resource_domains'] ) : '';
+		$output['wait_seconds'] = isset( $input['wait_seconds'] ) ? max( 0, intval( $input['wait_seconds'] ) ) : 0;
+		$output['random_wait'] = ! empty( $input['random_wait'] ) ? 1 : 0;
+		$output['level'] = isset( $input['level'] ) ? max( 0, intval( $input['level'] ) ) : 0;
+		$output['recursive_scheduled'] = ! empty( $input['recursive_scheduled'] ) ? 1 : 0;
+		$output['recursive_immediate'] = ! empty( $input['recursive_immediate'] ) ? 1 : 0;
 
 		return $output;
 	}
@@ -142,6 +156,11 @@ class Admin {
 			'no_check_certificate' => (int) get_option( 'static_mirror_no_check_certificate', 0 ),
 			'reject_patterns' => (string) get_option( 'static_mirror_reject_patterns', '' ),
 			'resource_domains' => (string) get_option( 'static_mirror_resource_domains', '' ),
+			'wait_seconds' => 0,
+			'random_wait' => 0,
+			'level' => 0,
+			'recursive_scheduled' => 1,
+			'recursive_immediate' => 0,
 		);
 		$settings = get_option( 'static_mirror_settings', array() );
 		return wp_parse_args( $settings, $defaults );
@@ -172,6 +191,14 @@ class Admin {
 		$key = $args['key'];
 		$checked = ! empty( $settings[ $key ] ) ? 'checked' : '';
 		echo '<label><input type="checkbox" name="static_mirror_settings[' . esc_attr( $key ) . ']" value="1" ' . $checked . ' /> ' . esc_html__( 'Enabled', 'static-mirror' ) . '</label>';
+	}
+
+	public function field_input_number( $args ) {
+		$settings = $this->get_settings();
+		$key = $args['key'];
+		$min = isset( $args['min'] ) ? intval( $args['min'] ) : 0;
+		$value = isset( $settings[ $key ] ) ? intval( $settings[ $key ] ) : 0;
+		echo '<input type="number" min="' . esc_attr( (string) $min ) . '" class="small-text" name="static_mirror_settings[' . esc_attr( $key ) . ']" value="' . esc_attr( (string) $value ) . '" />';
 	}
 
 	public function render_settings_page() {

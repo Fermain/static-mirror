@@ -359,7 +359,8 @@ class Admin {
 	}
 
 	public function enqueue_admin_assets( $hook ) {
-		if ( $hook !== 'tools_page_static-mirror-settings' ) {
+		$allowed_hooks = [ 'static-mirror_page_static-mirror-settings', 'tools_page_static-mirror-settings' ];
+		if ( ! in_array( $hook, $allowed_hooks, true ) ) {
 			return;
 		}
 		// Enqueue small inline script to handle preset buttons safely.

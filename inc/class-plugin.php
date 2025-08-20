@@ -133,7 +133,22 @@ class Plugin {
 		}
 
 		if ( ! wp_next_scheduled( 'static_mirror_create_mirror' ) ) {
-			wp_schedule_event( $this->get_daily_schedule_time(), 'daily', 'static_mirror_create_mirror' );
+			$settings = get_option( 'static_mirror_settings', [] );
+			$time = isset( $settings['schedule_time'] ) ? (string) $settings['schedule_time'] : '';
+			$freq = isset( $settings['schedule_frequency'] ) ? (string) $settings['schedule_frequency'] : 'daily';
+			$timestamp = $this->get_daily_schedule_time();
+			if ( preg_match( '/^\d{2}:\d{2}$/', $time ) ) {
+				list( $h, $m ) = array_map( 'intval', explode( ':', $time ) );
+				$today = current_time( 'timestamp' );
+				$target = mktime( $h, $m, 0, (int) date( 'n', $today ), (int) date( 'j', $today ), (int) date( 'Y', $today ) );
+				if ( $target <= $today ) { $target = strtotime( '+1 day', $target ); }
+				$timestamp = $target;
+			}
+			add_filter( 'cron_schedules', function( $s ) {
+				if ( ! isset( $s['weekly'] ) ) $s['weekly'] = [ 'interval' => 7 * DAY_IN_SECONDS, 'display' => __( 'Once Weekly' ) ];
+				return $s;
+			} );
+			wp_schedule_event( $timestamp, ( $freq === 'weekly' ? 'weekly' : 'daily' ), 'static_mirror_create_mirror' );
 		}
 
 		if ( ! wp_next_scheduled( 'static_mirror_delete_expired_mirrors' ) ) {

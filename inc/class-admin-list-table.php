@@ -190,8 +190,8 @@ class List_Table extends \WP_Posts_List_Table {
 			<input type="hidden" name="page" value="<?php echo esc_attr( $_GET['page'] ) ?>" />
 
 			<?php
-			submit_button( __( 'Filter' ), 'button', 'filter', false );
-			echo '<a class="button" href="' . esc_url( remove_query_arg( array( 'date-from', 'date-to', 'filter', 'clear-filter' ) ) ) . '">' . esc_html__( 'Reset', 'static-mirror' ) . '</a>';
+			submit_button( __( 'Filter' ), 'primary', 'filter', false );
+			echo '<a class="button button-secondary" style="margin-left:8px" href="' . esc_url( remove_query_arg( array( 'date-from', 'date-to', 'filter', 'clear-filter' ) ) ) . '">' . esc_html__( 'Reset', 'static-mirror' ) . '</a>';
 			?>
 		</form>
 

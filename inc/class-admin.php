@@ -22,6 +22,7 @@ class Admin {
 		add_action( 'admin_init', array( $this, 'check_manual_mirror' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 1 );
+		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 	}
 
@@ -46,6 +47,38 @@ class Admin {
 			'title' => __( 'Overview', 'static-mirror' ),
 			'content' => '<p>' . esc_html__( 'Use "Create Mirror Now" to generate a new snapshot. Configure crawling and exclusions under Tools → Static Mirror Settings. Filter the list by date range.', 'static-mirror' ) . '</p>',
 		) );
+	}
+
+	/**
+	 * Add top-level admin menu with submenus
+	 */
+	public function add_admin_menu() {
+		$mirrors_hook = add_menu_page(
+			__( 'Static Mirror', 'static-mirror' ),
+			__( 'Static Mirror', 'static-mirror' ),
+			'static_mirror_manage_mirrors',
+			'static-mirror',
+			array( $this, 'render_mirrors_page' ),
+			'dashicons-migrate'
+		);
+
+		add_action( 'load-' . $mirrors_hook, array( $this, 'setup_tools_screen' ) );
+
+		$settings_hook = add_submenu_page(
+			'static-mirror',
+			__( 'Settings', 'static-mirror' ),
+			__( 'Settings', 'static-mirror' ),
+			'static_mirror_manage_mirrors',
+			'static-mirror-settings',
+			array( $this, 'render_settings_page' )
+		);
+
+		// Ensure assets load for settings when needed
+		add_action( 'load-' . $settings_hook, function() {} );
+	}
+
+	public function render_mirrors_page() {
+		include dirname( __FILE__ ) . '/../templates/admin-tools-page.php';
 	}
 
 	// Persist Screen Options per-page setting

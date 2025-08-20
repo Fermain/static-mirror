@@ -24,6 +24,8 @@ class Admin {
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 1 );
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+		// Reschedule cron when settings change
+		add_action( 'update_option_static_mirror_settings', array( __CLASS__, 'handle_settings_update' ), 10, 3 );
 	}
 
 	/**
@@ -165,6 +167,7 @@ class Admin {
 		add_settings_section( 'sm_section_resources', __( 'Resources', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
 		add_settings_section( 'sm_section_performance', __( 'Performance', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
 		add_settings_section( 'sm_section_behavior', __( 'Behavior', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
+		add_settings_section( 'sm_section_schedule', __( 'Schedule', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
 
 		add_settings_field( 'starting_urls', __( 'Starting URLs', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_general', array( 'key' => 'starting_urls', 'desc' => __( 'One per line.', 'static-mirror' ) ) );
 
@@ -183,6 +186,9 @@ class Admin {
 
 		add_settings_field( 'recursive_scheduled', __( 'Recursive on scheduled mirrors', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_behavior', array( 'key' => 'recursive_scheduled' ) );
 		add_settings_field( 'recursive_immediate', __( 'Recursive on immediate mirrors', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_behavior', array( 'key' => 'recursive_immediate' ) );
+
+		add_settings_field( 'schedule_time', __( 'Schedule time (HH:MM)', 'static-mirror' ), array( $this, 'field_input_time' ), 'static-mirror-settings', 'sm_section_schedule', array( 'key' => 'schedule_time' ) );
+		add_settings_field( 'schedule_frequency', __( 'Frequency', 'static-mirror' ), array( $this, 'field_select' ), 'static-mirror-settings', 'sm_section_schedule', array( 'key' => 'schedule_frequency', 'options' => [ 'daily' => __( 'Daily', 'static-mirror' ), 'weekly' => __( 'Weekly', 'static-mirror' ) ] ) );
 	}
 
 	public function sanitize_settings( $input ) {
@@ -200,6 +206,11 @@ class Admin {
 		$output['level'] = isset( $input['level'] ) ? max( 0, intval( $input['level'] ) ) : 0;
 		$output['recursive_scheduled'] = ! empty( $input['recursive_scheduled'] ) ? 1 : 0;
 		$output['recursive_immediate'] = ! empty( $input['recursive_immediate'] ) ? 1 : 0;
+		// schedule
+		$time = isset( $input['schedule_time'] ) ? preg_replace( '/[^0-9:]/', '', (string) $input['schedule_time'] ) : '';
+		if ( preg_match( '/^\d{2}:\d{2}$/', $time ) ) { $output['schedule_time'] = $time; }
+		$freq = isset( $input['schedule_frequency'] ) ? (string) $input['schedule_frequency'] : 'daily';
+		$output['schedule_frequency'] = in_array( $freq, [ 'daily', 'weekly' ], true ) ? $freq : 'daily';
 
 		return $output;
 	}
@@ -218,6 +229,8 @@ class Admin {
 			'level' => 0,
 			'recursive_scheduled' => 1,
 			'recursive_immediate' => 0,
+			'schedule_time' => '23:59',
+			'schedule_frequency' => 'daily',
 		);
 		$settings = get_option( 'static_mirror_settings', array() );
 		return wp_parse_args( $settings, $defaults );
@@ -273,6 +286,59 @@ class Admin {
 		$min = isset( $args['min'] ) ? intval( $args['min'] ) : 0;
 		$value = isset( $settings[ $key ] ) ? intval( $settings[ $key ] ) : 0;
 		echo '<input type="number" min="' . esc_attr( (string) $min ) . '" class="small-text" name="static_mirror_settings[' . esc_attr( $key ) . ']" value="' . esc_attr( (string) $value ) . '" />';
+	}
+
+	public function field_input_time( $args ) {
+		$settings = $this->get_settings();
+		$key = $args['key'];
+		$value = isset( $settings[ $key ] ) ? (string) $settings[ $key ] : '';
+		echo '<input type="time" class="regular-text" name="static_mirror_settings[' . esc_attr( $key ) . ']" value="' . esc_attr( $value ) . '" />';
+	}
+
+	public function field_select( $args ) {
+		$settings = $this->get_settings();
+		$key = $args['key'];
+		$options = isset( $args['options'] ) ? (array) $args['options'] : [];
+		$current = isset( $settings[ $key ] ) ? (string) $settings[ $key ] : '';
+		echo '<select name="static_mirror_settings[' . esc_attr( $key ) . ']">';
+		foreach ( $options as $val => $label ) {
+			$sel = selected( $current, (string) $val, false );
+			echo '<option value="' . esc_attr( (string) $val ) . '" ' . $sel . '>' . esc_html( (string) $label ) . '</option>';
+		}
+		echo '</select>';
+	}
+
+	/**
+	 * Handle settings update: reschedule mirror cron according to schedule settings
+	 */
+	public static function handle_settings_update( $old_value, $value, $option ) : void {
+		// Clear existing mirror schedule
+		wp_clear_scheduled_hook( 'static_mirror_create_mirror' );
+
+		$settings = get_option( 'static_mirror_settings', [] );
+		$time = isset( $settings['schedule_time'] ) ? (string) $settings['schedule_time'] : '';
+		$freq = isset( $settings['schedule_frequency'] ) ? (string) $settings['schedule_frequency'] : 'daily';
+
+		// Default timestamp: today at 23:59 or next day if past
+		$timestamp = apply_filters( 'static_mirror_daily_schedule_time', strtotime( 'today 11:59pm' ) );
+		if ( preg_match( '/^\d{2}:\d{2}$/', $time ) ) {
+			list( $h, $m ) = array_map( 'intval', explode( ':', $time ) );
+			$today = current_time( 'timestamp' );
+			$target = mktime( $h, $m, 0, (int) date( 'n', $today ), (int) date( 'j', $today ), (int) date( 'Y', $today ) );
+			if ( $target <= $today ) { $target = strtotime( '+1 day', $target ); }
+			$timestamp = $target;
+		}
+
+		// Ensure weekly recurrence exists
+		add_filter( 'cron_schedules', function( $s ) {
+			if ( ! isset( $s['weekly'] ) ) {
+				$s['weekly'] = [ 'interval' => 7 * DAY_IN_SECONDS, 'display' => __( 'Once Weekly' ) ];
+			}
+			return $s;
+		} );
+
+		$recurrence = ( $freq === 'weekly' ) ? 'weekly' : 'daily';
+		wp_schedule_event( $timestamp, $recurrence, 'static_mirror_create_mirror' );
 	}
 
 	public function render_settings_page() {

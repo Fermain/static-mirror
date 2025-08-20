@@ -46,16 +46,7 @@ class Mirrorer {
 				sprintf( '%s', $recursive ? '--recursive' : '' ),
 				'-erobots=off', // Ignore robots.
 				'--restrict-file-names=windows',
-				sprintf(
-					'--reject-regex "%s"',
-					implode(
-						'|',
-						[
-							'.+\/feed\/?$',
-							'.+\/wp-json\/?(.+)?$',
-						]
-					)
-				),
+				static::build_reject_regex_arg(),
 				'--html-extension',
 				'--content-on-error',
 				'--trust-server-names', // Prevent duplicate files for redirected pages.
@@ -196,5 +187,37 @@ class Mirrorer {
 
 		return false;
 
+	}
+
+	/**
+	 * Build wget --reject-regex argument from defaults and admin-provided patterns.
+	 */
+	private static function build_reject_regex_arg() {
+		$defaults = [
+			'.+\/feed\/?$',
+			'.+\/wp-json\/?(.+)?$',
+		];
+
+		$raw = (string) get_option( 'static_mirror_reject_patterns', '' );
+		$user_lines = array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $raw ) ) );
+
+		$patterns = $defaults;
+		foreach ( $user_lines as $line ) {
+			if ( $line === '' ) continue;
+			// If looks like delimited regex, strip delimiters; else escape as a substring.
+			if ( preg_match( '/^(.).+\1[imsxuADSUXJ]*$/', $line ) ) {
+				$delim = substr( $line, 0, 1 );
+				$last = strrpos( $line, $delim );
+				if ( $last !== false ) {
+					$body = substr( $line, 1, $last - 1 );
+					$patterns[] = $body;
+				}
+			} else {
+				$patterns[] = preg_quote( $line, '/' );
+			}
+		}
+
+		$joined = implode( '|', $patterns );
+		return sprintf( '--reject-regex %s', escapeshellarg( $joined ) );
 	}
 }

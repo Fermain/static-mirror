@@ -66,5 +66,9 @@ class Admin {
 
 		$no_check = isset( $_POST['static-mirror-no-check-certificate'] ) ? 1 : 0;
 		update_option( 'static_mirror_no_check_certificate', $no_check );
+
+		$reject_patterns = isset( $_POST['static-mirror-reject-patterns'] ) ? (string) $_POST['static-mirror-reject-patterns'] : '';
+		$reject_patterns = preg_replace( '/^\s+|\s+$/m', '', $reject_patterns );
+		update_option( 'static_mirror_reject_patterns', $reject_patterns );
 	}
 }

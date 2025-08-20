@@ -35,6 +35,14 @@ $list_table->prepare_items();
 				</tr>
 				<tr>
 					<th scope="row">
+						<label for="static-mirror-reject-patterns">URL Exclusion Patterns</label></th>
+					<td>
+						<textarea name="static-mirror-reject-patterns" id="static-mirror-reject-patterns" style="width: 300px; min-height: 100px" class="regular-text"><?php echo esc_textarea( get_option( 'static_mirror_reject_patterns', "" ) ); ?></textarea>
+						<p class="description">One per line. Regex (with delimiters) or substring. Merged into wget --reject-regex.</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
 						<label for="static-mirror-no-check-certificate">Skip TLS certificate verification</label></th>
 					<td>
 						<label>

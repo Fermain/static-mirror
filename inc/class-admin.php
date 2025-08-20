@@ -70,5 +70,19 @@ class Admin {
 		$reject_patterns = isset( $_POST['static-mirror-reject-patterns'] ) ? (string) $_POST['static-mirror-reject-patterns'] : '';
 		$reject_patterns = preg_replace( '/^\s+|\s+$/m', '', $reject_patterns );
 		update_option( 'static_mirror_reject_patterns', $reject_patterns );
+
+		$resource_domains = isset( $_POST['static-mirror-resource-domains'] ) ? (string) $_POST['static-mirror-resource-domains'] : '';
+		$resource_domains = preg_replace( '/^\s+|\s+$/m', '', $resource_domains );
+		update_option( 'static_mirror_resource_domains', $resource_domains );
+
+		$crawler_cookies = isset( $_POST['static-mirror-crawler-cookies'] ) ? (string) $_POST['static-mirror-crawler-cookies'] : '';
+		$crawler_cookies = preg_replace( '/^\s+|\s+$/m', '', $crawler_cookies );
+		update_option( 'static_mirror_crawler_cookies', $crawler_cookies );
+
+		$user_agent = isset( $_POST['static-mirror-user-agent'] ) ? (string) $_POST['static-mirror-user-agent'] : '';
+		update_option( 'static_mirror_user_agent', sanitize_text_field( $user_agent ) );
+
+		$robots_on = isset( $_POST['static-mirror-robots-on'] ) ? 1 : 0;
+		update_option( 'static_mirror_robots_on', $robots_on );
 	}
 }

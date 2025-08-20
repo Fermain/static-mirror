@@ -24,8 +24,26 @@ class Mirrorer {
 
 		wp_mkdir_p( $destination );
 
-		$mirror_cookies = apply_filters( 'static_mirror_crawler_cookies', array( 'wp_static_mirror' => 1 ) );
-		$resource_domains = apply_filters( 'static_mirror_resource_domains', array() );
+		// Load cookies and resource domains from options, then apply filters
+		$mirror_cookies = [];
+		$raw_cookies = (string) get_option( 'static_mirror_crawler_cookies', '' );
+		foreach ( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $raw_cookies ) ) ) as $line ) {
+			if ( strpos( $line, '=' ) !== false ) {
+				list( $k, $v ) = array_map( 'trim', explode( '=', $line, 2 ) );
+				if ( $k !== '' ) { $mirror_cookies[$k] = $v; }
+			}
+		}
+		if ( empty( $mirror_cookies ) ) { $mirror_cookies = array( 'wp_static_mirror' => 1 ); }
+		$mirror_cookies = apply_filters( 'static_mirror_crawler_cookies', $mirror_cookies );
+
+		$resource_domains = [];
+		$raw_domains = (string) get_option( 'static_mirror_resource_domains', '' );
+		foreach ( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $raw_domains ) ) ) as $host ) {
+			$host = preg_replace( '/^https?:\/\//', '', $host );
+			$host = rtrim( $host, '/' );
+			if ( $host !== '' ) { $resource_domains[] = $host; }
+		}
+		$resource_domains = apply_filters( 'static_mirror_resource_domains', $resource_domains );
 
 		$cookie_string = implode( ';', array_map( function( $v, $k ) {
 			return $k . '=' . $v;
@@ -50,9 +68,9 @@ class Mirrorer {
 				'--html-extension',
 				'--content-on-error',
 				'--trust-server-names', // Prevent duplicate files for redirected pages.
-				sprintf( '--header "Cookie: %s"', $cookie_string ),
+				sprintf( '--header %s', escapeshellarg( 'Cookie: ' . $cookie_string ) ),
 				'--span-hosts',
-				sprintf( '--domains="%s"', implode( ',', $allowed_domains ) ), // Given span hosts, restrict to defined domains.
+				sprintf( '--domains=%s', escapeshellarg( implode( ',', $allowed_domains ) ) ), // Given span hosts, restrict to defined domains.
 				sprintf( '--directory-prefix=%s', escapeshellarg( $temp_destination ) ),
 			);
 
@@ -62,11 +80,19 @@ class Mirrorer {
 				$args[] = '--no-check-certificate';
 			}
 
-			$cmd = sprintf(
-				'wget %s %s 2>&1',
-				implode( ' ', $args ),
-				escapeshellarg( esc_url_raw( $url ) )
-			);
+			$ua = get_option( 'static_mirror_user_agent', '' );
+			if ( $ua ) {
+				$args[0] = sprintf( '--user-agent=%s', escapeshellarg( $ua ) );
+			}
+
+			// Respect robots toggle
+			if ( (int) get_option( 'static_mirror_robots_on', 0 ) === 1 ) {
+				$args[] = '--execute robots=on';
+			} else {
+				$args[] = '-erobots=off';
+			}
+
+			$cmd = sprintf( 'wget %s %s 2>&1', implode( ' ', $args ), escapeshellarg( esc_url_raw( $url ) ) );
 
 			$data = shell_exec( $cmd );
 

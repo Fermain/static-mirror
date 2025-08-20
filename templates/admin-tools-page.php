@@ -43,11 +43,43 @@ $list_table->prepare_items();
 				</tr>
 				<tr>
 					<th scope="row">
+						<label for="static-mirror-resource-domains">Allowed resource domains</label></th>
+					<td>
+						<textarea name="static-mirror-resource-domains" id="static-mirror-resource-domains" style="width: 300px; min-height: 80px" class="regular-text"><?php echo esc_textarea( get_option( 'static_mirror_resource_domains', "" ) ); ?></textarea>
+						<p class="description">One host per line. Used with --span-hosts and --domains. Include primary host for safety.</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="static-mirror-crawler-cookies">Crawler cookies (key=value per line)</label></th>
+					<td>
+						<textarea name="static-mirror-crawler-cookies" id="static-mirror-crawler-cookies" style="width: 300px; min-height: 80px" class="regular-text"><?php echo esc_textarea( get_option( 'static_mirror_crawler_cookies', "" ) ); ?></textarea>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="static-mirror-user-agent">User-Agent</label></th>
+					<td>
+						<input type="text" name="static-mirror-user-agent" id="static-mirror-user-agent" class="regular-text" value="<?php echo esc_attr( get_option( 'static_mirror_user_agent', '' ) ); ?>" />
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
 						<label for="static-mirror-no-check-certificate">Skip TLS certificate verification</label></th>
 					<td>
 						<label>
 							<input type="checkbox" id="static-mirror-no-check-certificate" name="static-mirror-no-check-certificate" value="1" <?php \checked( (int) get_option( 'static_mirror_no_check_certificate', 0 ), 1 ); ?> />
 							Add --no-check-certificate to wget (useful for internal CAs)
+						</label>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row">
+						<label for="static-mirror-robots-on">Respect robots.txt</label></th>
+					<td>
+						<label>
+							<input type="checkbox" id="static-mirror-robots-on" name="static-mirror-robots-on" value="1" <?php \checked( (int) get_option( 'static_mirror_robots_on', 0 ), 1 ); ?> />
+							Use wget robots=on (unchecked uses -erobots=off)
 						</label>
 					</td>
 				</tr>

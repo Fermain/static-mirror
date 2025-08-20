@@ -251,12 +251,12 @@ class Admin {
 		// Preset buttons for exclusion patterns (handled by enqueued JS)
 		if ( $key === 'reject_patterns' ) {
 			$preset_patterns = [
-				[ 'label' => __( 'Pagination', 'static-mirror' ), 'pattern' => '#/page/\\d+/#' ],
-				[ 'label' => __( 'Year archives', 'static-mirror' ), 'pattern' => '#/\\d{4}/(?:$|page/\\d+/)#' ],
-				[ 'label' => __( 'Search (query)', 'static-mirror' ), 'pattern' => '#[?&]s=#' ],
+				[ 'label' => __( 'Pagination', 'static-mirror' ), 'pattern' => '/page/[0-9]+/' ],
+				[ 'label' => __( 'Year archives', 'static-mirror' ), 'pattern' => '/[0-9]{4}(/page/[0-9]+/)?$' ],
+				[ 'label' => __( 'Search (query)', 'static-mirror' ), 'pattern' => '[?&]s=' ],
 				[ 'label' => __( 'Admin paths', 'static-mirror' ), 'pattern' => '/wp-admin/' ],
-				[ 'label' => __( 'WP JSON API', 'static-mirror' ), 'pattern' => '#/wp-json(?:/.*)?$#' ],
-				[ 'label' => __( 'Uploads', 'static-mirror' ), 'pattern' => '#/wp-content/uploads/#' ],
+				[ 'label' => __( 'WP JSON API', 'static-mirror' ), 'pattern' => '/wp-json(/.*)?$' ],
+				[ 'label' => __( 'Uploads', 'static-mirror' ), 'pattern' => '/wp-content/uploads/' ],
 			];
 			echo '<p>';
 			foreach ( $preset_patterns as $pp ) {

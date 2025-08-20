@@ -64,7 +64,7 @@ class Mirrorer {
 				sprintf( '%s', $recursive ? '--recursive' : '' ),
 				'-erobots=off', // Ignore robots.
 				'--restrict-file-names=windows',
-				static::build_reject_regex_arg(),
+				self::build_reject_regex_arg(),
 				'--html-extension',
 				'--content-on-error',
 				'--trust-server-names', // Prevent duplicate files for redirected pages.
@@ -177,6 +177,34 @@ class Mirrorer {
 				unlink( $source . '/' . $file );
 			}
 
+		}
+
+		return true;
+	}
+
+	/**
+	 * Recursively delete a directory.
+	 *
+	 * @param string $path Path to directory.
+	 * @return bool
+	 */
+	public static function rrmdir( string $path ) : bool {
+		try {
+			$iterator = new DirectoryIterator( $path );
+			foreach ( $iterator as $fileinfo ) {
+				if ( $fileinfo->isDot() ) {
+					continue;
+				}
+				if ( $fileinfo->isDir() && self::rrmdir( $fileinfo->getPathname() ) ) {
+					rmdir( $fileinfo->getPathname() );
+				}
+				if( $fileinfo->isFile() ) {
+					unlink( $fileinfo->getPathname() );
+				}
+			}
+		} catch ( Exception $e ){
+			trigger_error( $e->getMessage(), E_USER_WARNING );
+			return false;
 		}
 
 		return true;

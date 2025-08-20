@@ -14,6 +14,9 @@ require_once dirname( __FILE__ ) . '/inc/class-admin.php';
 require_once dirname( __FILE__ ) . '/inc/class-admin-list-table.php';
 require_once dirname( __FILE__ ) . '/inc/class-s3.php';
 
+// Ensure Admin singleton is instantiated so it can register menus and settings hooks
+Static_Mirror\Admin::get_instance();
+
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once dirname( __FILE__ ) . '/inc/class-wp-cli-command.php';
 

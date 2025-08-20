@@ -202,7 +202,7 @@ class Admin {
 			echo '<p class="description">' . esc_html( $args['desc'] ) . '</p>';
 		}
 
-		// Preset buttons for exclusion patterns
+		// Preset buttons for exclusion patterns (handled by enqueued JS)
 		if ( $key === 'reject_patterns' ) {
 			$preset_patterns = [
 				[ 'label' => __( 'Pagination', 'static-mirror' ), 'pattern' => '#/page/\\d+/#' ],
@@ -215,7 +215,6 @@ class Admin {
 				echo '<button class="button sm-preset-button" type="button" data-target="sm-field-reject_patterns" data-pattern="' . esc_attr( $pp['pattern'] ) . '">' . esc_html( $pp['label'] ) . '</button> ';
 			}
 			echo '</p>';
-			echo '<script>(function(){\nfunction addLine(id, pattern){var ta=document.getElementById(id);if(!ta) return;var val=ta.value;var lines=val?val.split(/\r?\n/):[];if(lines.indexOf(pattern)===-1){ta.value=(val?val+"\n":"")+pattern;}}\nvar btns=document.querySelectorAll(".sm-preset-button");btns.forEach(function(b){b.addEventListener("click",function(e){e.preventDefault();addLine(this.getAttribute("data-target"), this.getAttribute("data-pattern"));});});})();</script>';
 		}
 	}
 
@@ -262,7 +261,12 @@ class Admin {
 		if ( $hook !== 'tools_page_static-mirror-settings' ) {
 			return;
 		}
-		// Placeholder for future styles/scripts; keep minimal & scoped.
+		// Enqueue small inline script to handle preset buttons safely.
+		$handle = 'static-mirror-settings';
+		wp_register_script( $handle, false, [], false, true );
+		wp_enqueue_script( $handle );
+		$inline = "(function(){function addLine(id,pattern){var ta=document.getElementById(id);if(!ta)return;var val=ta.value||'';var lines=val?val.split(/\\r?\\n/):[];if(lines.indexOf(pattern)===-1){ta.value=(val?val+'\\n':'')+pattern;}}document.addEventListener('click',function(e){var t=e.target;if(t && t.classList && t.classList.contains('sm-preset-button')){e.preventDefault();addLine(t.getAttribute('data-target'),t.getAttribute('data-pattern'));}});})();";
+		wp_add_inline_script( $handle, $inline, 'after' );
 	}
 
 	/**

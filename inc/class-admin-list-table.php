@@ -140,8 +140,11 @@ class List_Table extends \WP_Posts_List_Table {
 	 *                      before (top) or after (bottom) the table list
 	 */
 	protected function extra_tablenav( $which ) {
+		if ( $which !== 'top' ) {
+			return;
+		}
 		?>
-		<div class="alignleft actions">
+		<div class="alignleft actions" style="margin-bottom:12px">
 			<?php
 			if ( ! is_singular() ) {
 

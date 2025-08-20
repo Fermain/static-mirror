@@ -209,6 +209,8 @@ class Admin {
 				[ 'label' => __( 'Year archives', 'static-mirror' ), 'pattern' => '#/\\d{4}/(?:$|page/\\d+/)#' ],
 				[ 'label' => __( 'Search (query)', 'static-mirror' ), 'pattern' => '#[?&]s=#' ],
 				[ 'label' => __( 'Admin paths', 'static-mirror' ), 'pattern' => '/wp-admin/' ],
+				[ 'label' => __( 'WP JSON API', 'static-mirror' ), 'pattern' => '#/wp-json(?:/.*)?$#' ],
+				[ 'label' => __( 'Uploads', 'static-mirror' ), 'pattern' => '#/wp-content/uploads/#' ],
 			];
 			echo '<p>';
 			foreach ( $preset_patterns as $pp ) {
@@ -222,7 +224,7 @@ class Admin {
 		$settings = $this->get_settings();
 		$key = $args['key'];
 		$value = isset( $settings[ $key ] ) ? $settings[ $key ] : '';
-		echo '<input type="text" class="regular-text" name="static_mirror_settings[' . esc_attr( $key ) . ']" value="' . esc_attr( (string) $value ) . '" />';
+		echo '<input type="text" class="regular-text" name="static_mirror_settings[' . esc_attr( $key ) . ']" value="' . esc_attr( (string) $value ) . '" placeholder="' . esc_attr( 'WordPress/Static-Mirror; ' . home_url() ) . '" />';
 	}
 
 	public function field_checkbox( $args ) {

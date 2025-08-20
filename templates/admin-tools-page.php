@@ -20,5 +20,35 @@ $list_table->prepare_items();
 		<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'action', 'static-mirror-create-mirror' ), 'static-mirror-create' ) ); ?>" class="add-new-h2">Create Mirror Now</a>
 	</h2>
 
+	<?php
+	// Build a preview of wget command using current settings
+	$sm_settings = get_option( 'static_mirror_settings', [] );
+	$ua = ! empty( $sm_settings['user_agent'] ) ? $sm_settings['user_agent'] : 'WordPress/Static-Mirror; ' . home_url();
+	$cookies = [];
+	if ( ! empty( $sm_settings['crawler_cookies'] ) ) {
+		foreach ( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $sm_settings['crawler_cookies'] ) ) ) as $line ) {
+			if ( strpos( $line, '=' ) !== false ) { $cookies[] = $line; }
+		}
+	}
+	$cookie_header = $cookies ? sprintf( "--header %s", esc_html( escapeshellarg( 'Cookie: ' . implode( ';', $cookies ) ) ) ) : '';
+	$robots = ! empty( $sm_settings['robots_on'] ) ? '--execute robots=on' : '-erobots=off';
+	$no_check = ! empty( $sm_settings['no_check_certificate'] ) ? '--no-check-certificate' : '';
+	$wait = ! empty( $sm_settings['wait_seconds'] ) ? sprintf( '--wait=%d', (int) $sm_settings['wait_seconds'] ) : '';
+	$rand = ! empty( $sm_settings['random_wait'] ) ? '--random-wait' : '';
+	$level = ! empty( $sm_settings['level'] ) ? sprintf( '--level=%d', (int) $sm_settings['level'] ) : '';
+	$reject = '';
+	if ( ! empty( $sm_settings['reject_patterns'] ) ) {
+		$reject = sprintf( '--reject-regex %s', esc_html( escapeshellarg( (string) $sm_settings['reject_patterns'] ) ) );
+	}
+	$ua_arg = sprintf( '--user-agent=%s', esc_html( escapeshellarg( $ua ) ) );
+	$preview_parts = array_filter( [ 'wget', $ua_arg, '--no-clobber', '--page-requisites', '--convert-links', '--backup-converted', $robots, '--restrict-file-names=windows', $reject, '--html-extension', '--content-on-error', '--trust-server-names', $cookie_header, $wait, $rand, $level ] );
+	?>
+	<div class="notice notice-info" style="padding:10px 12px;">
+		<strong>Preview:</strong>
+		<code style="display:block; overflow:auto; white-space:pre-wrap; word-break:break-all; margin-top:6px;">
+			<?php echo implode( ' ', $preview_parts ) . ' ' . esc_html( escapeshellarg( home_url( '/' ) ) ); ?>
+		</code>
+	</div>
+
 	<?php $list_table->display(); ?>
 </div>

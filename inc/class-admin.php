@@ -197,9 +197,25 @@ class Admin {
 		if ( is_array( $value ) ) {
 			$value = implode( "\n", $value );
 		}
-		echo '<textarea name="static_mirror_settings[' . esc_attr( $key ) . ']" class="large-text" rows="6">' . esc_textarea( (string) $value ) . '</textarea>';
+		echo '<textarea id="sm-field-' . esc_attr( $key ) . '" name="static_mirror_settings[' . esc_attr( $key ) . ']" class="large-text" rows="6">' . esc_textarea( (string) $value ) . '</textarea>';
 		if ( ! empty( $args['desc'] ) ) {
 			echo '<p class="description">' . esc_html( $args['desc'] ) . '</p>';
+		}
+
+		// Preset buttons for exclusion patterns
+		if ( $key === 'reject_patterns' ) {
+			$preset_patterns = [
+				[ 'label' => __( 'Pagination', 'static-mirror' ), 'pattern' => '#/page/\\d+/#' ],
+				[ 'label' => __( 'Year archives', 'static-mirror' ), 'pattern' => '#/\\d{4}/(?:$|page/\\d+/)#' ],
+				[ 'label' => __( 'Search (query)', 'static-mirror' ), 'pattern' => '#[?&]s=#' ],
+				[ 'label' => __( 'Admin paths', 'static-mirror' ), 'pattern' => '/wp-admin/' ],
+			];
+			echo '<p>';
+			foreach ( $preset_patterns as $pp ) {
+				echo '<button class="button sm-preset-button" type="button" data-target="sm-field-reject_patterns" data-pattern="' . esc_attr( $pp['pattern'] ) . '">' . esc_html( $pp['label'] ) . '</button> ';
+			}
+			echo '</p>';
+			echo '<script>(function(){\nfunction addLine(id, pattern){var ta=document.getElementById(id);if(!ta) return;var val=ta.value;var lines=val?val.split(/\r?\n/):[];if(lines.indexOf(pattern)===-1){ta.value=(val?val+"\n":"")+pattern;}}\nvar btns=document.querySelectorAll(".sm-preset-button");btns.forEach(function(b){b.addEventListener("click",function(e){e.preventDefault();addLine(this.getAttribute("data-target"), this.getAttribute("data-pattern"));});});})();</script>';
 		}
 	}
 

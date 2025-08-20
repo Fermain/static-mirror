@@ -48,6 +48,14 @@ class Admin {
 		) );
 	}
 
+	// Persist Screen Options per-page setting
+	public static function set_screen_option( $status, $option, $value ) {
+		if ( 'edit_static-mirror_per_page' === $option ) {
+			return (int) $value;
+		}
+		return $status;
+	}
+
 	/**
 	 * Add the Settings subpage under Tools
 	 */
@@ -239,5 +247,15 @@ class Admin {
 			return;
 		}
 		// Placeholder for future styles/scripts; keep minimal & scoped.
+	}
+
+	/**
+	 * Add Settings link on Plugins page row
+	 */
+	public static function plugin_action_links( $links ) {
+		$settings_url = admin_url( 'tools.php?page=static-mirror-settings' );
+		$settings_link = '<a href="' . esc_url( $settings_url ) . '">' . esc_html__( 'Settings', 'static-mirror' ) . '</a>';
+		array_unshift( $links, $settings_link );
+		return $links;
 	}
 }

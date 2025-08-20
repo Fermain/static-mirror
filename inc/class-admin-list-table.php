@@ -188,7 +188,7 @@ class List_Table extends \WP_Posts_List_Table {
 
 			<?php
 			submit_button( __( 'Filter' ), 'button', 'filter', false );
-			submit_button( __( 'Clear Filter' ), 'button', 'clear-filter', false );
+			echo '<a class="button" href="' . esc_url( remove_query_arg( array( 'date-from', 'date-to', 'filter', 'clear-filter' ) ) ) . '">' . esc_html__( 'Reset', 'static-mirror' ) . '</a>';
 			?>
 		</form>
 

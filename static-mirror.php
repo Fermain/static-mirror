@@ -33,6 +33,8 @@ if ( ! defined( 'SM_TTL' ) ) {
 add_action( 'init', array( Static_Mirror\Plugin::get_instance(), 'setup_trigger_hooks' ), 999 );
 add_action( 'init', array( Static_Mirror\Plugin::get_instance(), 'setup_capabilities' ) );
 add_action( 'admin_menu', array( Static_Mirror\Admin::get_instance(), 'add_tools_page' ), 1 );
+add_filter( 'set-screen-option', array( Static_Mirror\Admin::class, 'set_screen_option' ), 10, 3 );
 add_action( 'static_mirror_create_mirror', array( Static_Mirror\Plugin::get_instance(), 'mirror_on_cron' ) );
 add_action( 'static_mirror_create_mirror_for_url', array( Static_Mirror\Plugin::get_instance(), 'mirror' ), 10, 2 );
 add_action( 'static_mirror_delete_expired_mirrors', array( Static_Mirror\Plugin::get_instance(), 'delete_expired_mirrors' ) );
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( Static_Mirror\Admin::class, 'plugin_action_links' ) );

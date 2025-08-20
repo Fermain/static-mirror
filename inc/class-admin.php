@@ -102,21 +102,21 @@ class Admin {
 	public function register_settings() {
 		register_setting( 'static_mirror', 'static_mirror_settings', array( $this, 'sanitize_settings' ) );
 
-		add_settings_section( 'sm_section_general', __( 'General', 'static-mirror' ), '__return_false', 'static-mirror' );
-		add_settings_section( 'sm_section_crawling', __( 'Crawling', 'static-mirror' ), '__return_false', 'static-mirror' );
-		add_settings_section( 'sm_section_exclusions', __( 'Exclusions', 'static-mirror' ), '__return_false', 'static-mirror' );
-		add_settings_section( 'sm_section_resources', __( 'Resources', 'static-mirror' ), '__return_false', 'static-mirror' );
+		add_settings_section( 'sm_section_general', __( 'General', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
+		add_settings_section( 'sm_section_crawling', __( 'Crawling', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
+		add_settings_section( 'sm_section_exclusions', __( 'Exclusions', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
+		add_settings_section( 'sm_section_resources', __( 'Resources', 'static-mirror' ), '__return_false', 'static-mirror-settings' );
 
-		add_settings_field( 'starting_urls', __( 'Starting URLs', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror', 'sm_section_general', array( 'key' => 'starting_urls', 'desc' => __( 'One per line.', 'static-mirror' ) ) );
+		add_settings_field( 'starting_urls', __( 'Starting URLs', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_general', array( 'key' => 'starting_urls', 'desc' => __( 'One per line.', 'static-mirror' ) ) );
 
-		add_settings_field( 'user_agent', __( 'User-Agent', 'static-mirror' ), array( $this, 'field_input' ), 'static-mirror', 'sm_section_crawling', array( 'key' => 'user_agent' ) );
-		add_settings_field( 'crawler_cookies', __( 'Crawler cookies', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror', 'sm_section_crawling', array( 'key' => 'crawler_cookies', 'desc' => __( 'key=value per line', 'static-mirror' ) ) );
-		add_settings_field( 'robots_on', __( 'Respect robots.txt', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror', 'sm_section_crawling', array( 'key' => 'robots_on' ) );
-		add_settings_field( 'no_check_certificate', __( 'Skip TLS certificate verification', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror', 'sm_section_crawling', array( 'key' => 'no_check_certificate' ) );
+		add_settings_field( 'user_agent', __( 'User-Agent', 'static-mirror' ), array( $this, 'field_input' ), 'static-mirror-settings', 'sm_section_crawling', array( 'key' => 'user_agent' ) );
+		add_settings_field( 'crawler_cookies', __( 'Crawler cookies', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_crawling', array( 'key' => 'crawler_cookies', 'desc' => __( 'key=value per line', 'static-mirror' ) ) );
+		add_settings_field( 'robots_on', __( 'Respect robots.txt', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_crawling', array( 'key' => 'robots_on' ) );
+		add_settings_field( 'no_check_certificate', __( 'Skip TLS certificate verification', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_crawling', array( 'key' => 'no_check_certificate' ) );
 
-		add_settings_field( 'reject_patterns', __( 'URL Exclusion Patterns', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror', 'sm_section_exclusions', array( 'key' => 'reject_patterns', 'desc' => __( 'Regex (with delimiters) or substring, one per line.', 'static-mirror' ) ) );
+		add_settings_field( 'reject_patterns', __( 'URL Exclusion Patterns', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_exclusions', array( 'key' => 'reject_patterns', 'desc' => __( 'Regex (with delimiters) or substring, one per line.', 'static-mirror' ) ) );
 
-		add_settings_field( 'resource_domains', __( 'Allowed resource domains', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror', 'sm_section_resources', array( 'key' => 'resource_domains', 'desc' => __( 'One host per line.', 'static-mirror' ) ) );
+		add_settings_field( 'resource_domains', __( 'Allowed resource domains', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_resources', array( 'key' => 'resource_domains', 'desc' => __( 'One host per line.', 'static-mirror' ) ) );
 	}
 
 	public function sanitize_settings( $input ) {
@@ -135,8 +135,8 @@ class Admin {
 
 	private function get_settings() {
 		$defaults = array(
-			'starting_urls' => Plugin::get_instance()->get_base_urls(),
-			'user_agent' => get_option( 'static_mirror_user_agent', '' ),
+			'starting_urls' => array( home_url() ),
+			'user_agent' => 'WordPress/Static-Mirror; ' . get_bloginfo( 'url' ),
 			'crawler_cookies' => (string) get_option( 'static_mirror_crawler_cookies', '' ),
 			'robots_on' => (int) get_option( 'static_mirror_robots_on', 0 ),
 			'no_check_certificate' => (int) get_option( 'static_mirror_no_check_certificate', 0 ),
@@ -181,9 +181,10 @@ class Admin {
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html__( 'Static Mirror Settings', 'static-mirror' ); ?></h1>
+			<?php settings_errors(); ?>
 			<form method="post" action="options.php">
 				<?php settings_fields( 'static_mirror' ); ?>
-				<?php do_settings_sections( 'static-mirror' ); ?>
+				<?php do_settings_sections( 'static-mirror-settings' ); ?>
 				<?php submit_button(); ?>
 			</form>
 		</div>

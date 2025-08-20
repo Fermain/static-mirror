@@ -41,7 +41,15 @@ class Plugin {
 		if ( ! empty( $settings['starting_urls'] ) && is_array( $settings['starting_urls'] ) ) {
 			$urls = $settings['starting_urls'];
 		} else {
-			$urls = get_option( 'static_mirror_base_urls', array( home_url() ) );
+			$old_urls = get_option( 'static_mirror_base_urls', null );
+			if ( ! empty( $old_urls ) && is_array( $old_urls ) ) {
+				$urls = $old_urls;
+				$settings['starting_urls'] = array_values( array_filter( array_map( 'esc_url_raw', $old_urls ) ) );
+				update_option( 'static_mirror_settings', $settings );
+				delete_option( 'static_mirror_base_urls' );
+			} else {
+				$urls = array( home_url() );
+			}
 		}
 		return apply_filters( 'static_mirror_base_urls', $urls );
 	}

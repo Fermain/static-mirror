@@ -166,7 +166,7 @@ class Admin {
 	private function get_settings() {
 		$defaults = array(
 			'starting_urls' => array( home_url() ),
-			'user_agent' => 'WordPress/Static-Mirror; ' . get_bloginfo( 'url' ),
+			'user_agent' => 'WordPress/Static-Mirror; ' . home_url(),
 			'crawler_cookies' => (string) get_option( 'static_mirror_crawler_cookies', '' ),
 			'robots_on' => (int) get_option( 'static_mirror_robots_on', 0 ),
 			'no_check_certificate' => (int) get_option( 'static_mirror_no_check_certificate', 0 ),

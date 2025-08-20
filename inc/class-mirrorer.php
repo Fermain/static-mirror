@@ -101,15 +101,15 @@ class Mirrorer {
 			}
 
 			// Add wait/random-wait and level args based on consolidated settings.
-			$wait_time = (int) get_option( 'static_mirror_wait_time', 0 );
+			$wait_time = isset( $sm_settings['wait_seconds'] ) ? (int) $sm_settings['wait_seconds'] : (int) get_option( 'static_mirror_wait_time', 0 );
 			if ( $wait_time > 0 ) {
 				$args[] = sprintf( '--wait=%d', $wait_time );
 			}
-			$random_wait = (int) get_option( 'static_mirror_random_wait', 0 );
+			$random_wait = isset( $sm_settings['random_wait'] ) ? (int) $sm_settings['random_wait'] : (int) get_option( 'static_mirror_random_wait', 0 );
 			if ( $random_wait > 0 ) {
-				$args[] = sprintf( '--random-wait=%d', $random_wait );
+				$args[] = '--random-wait';
 			}
-			$level = (int) get_option( 'static_mirror_level', 0 );
+			$level = isset( $sm_settings['level'] ) ? (int) $sm_settings['level'] : (int) get_option( 'static_mirror_level', 0 );
 			if ( $level > 0 ) {
 				$args[] = sprintf( '--level=%d', $level );
 			}

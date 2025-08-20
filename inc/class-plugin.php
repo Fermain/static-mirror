@@ -36,7 +36,14 @@ class Plugin {
 	 * @return Array
 	 */
 	public function get_base_urls() {
-		return apply_filters( 'static_mirror_base_urls', get_option( 'static_mirror_base_urls', array( home_url() ) ) );
+		$settings = get_option( 'static_mirror_settings', array() );
+		$urls = array();
+		if ( ! empty( $settings['starting_urls'] ) && is_array( $settings['starting_urls'] ) ) {
+			$urls = $settings['starting_urls'];
+		} else {
+			$urls = get_option( 'static_mirror_base_urls', array( home_url() ) );
+		}
+		return apply_filters( 'static_mirror_base_urls', $urls );
 	}
 
 	/**
@@ -46,6 +53,9 @@ class Plugin {
 	 */
 	public function set_base_urls( Array $urls ) {
 		update_option( 'static_mirror_base_urls', $urls );
+		$settings = get_option( 'static_mirror_settings', array() );
+		$settings['starting_urls'] = array_values( array_filter( array_map( 'esc_url_raw', $urls ) ) );
+		update_option( 'static_mirror_settings', $settings );
 	}
 
 	/**

@@ -80,13 +80,20 @@ class Mirrorer {
 				$args[] = '--no-check-certificate';
 			}
 
-			$ua = get_option( 'static_mirror_user_agent', '' );
+			$ua = '';
+			$sm_settings = get_option( 'static_mirror_settings', array() );
+			if ( ! empty( $sm_settings['user_agent'] ) ) {
+				$ua = (string) $sm_settings['user_agent'];
+			} else {
+				$ua = get_option( 'static_mirror_user_agent', '' );
+			}
 			if ( $ua ) {
 				$args[0] = sprintf( '--user-agent=%s', escapeshellarg( $ua ) );
 			}
 
 			// Respect robots toggle
-			if ( (int) get_option( 'static_mirror_robots_on', 0 ) === 1 ) {
+			$robots_on_setting = isset( $sm_settings['robots_on'] ) ? (int) $sm_settings['robots_on'] : (int) get_option( 'static_mirror_robots_on', 0 );
+			if ( $robots_on_setting === 1 ) {
 				$args[] = '--execute robots=on';
 			} else {
 				$args[] = '-erobots=off';

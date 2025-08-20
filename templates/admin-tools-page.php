@@ -33,6 +33,16 @@ $list_table->prepare_items();
 						<p class="description">All the different "sites" you want to create mirrors of.</p>
 					</td>
 				</tr>
+				<tr>
+					<th scope="row">
+						<label for="static-mirror-no-check-certificate">Skip TLS certificate verification</label></th>
+					<td>
+						<label>
+							<input type="checkbox" id="static-mirror-no-check-certificate" name="static-mirror-no-check-certificate" value="1" <?php checked( (int) get_option( 'static_mirror_no_check_certificate', 0 ), 1 ); ?> />
+							Add --no-check-certificate to wget (useful for internal CAs)
+						</label>
+					</td>
+				</tr>
 			</tbody>
 
 		</table>

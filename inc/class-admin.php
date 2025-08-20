@@ -63,5 +63,8 @@ class Admin {
 		);
 
 		Plugin::get_instance()->set_base_urls( $urls );
+
+		$no_check = isset( $_POST['static-mirror-no-check-certificate'] ) ? 1 : 0;
+		update_option( 'static_mirror_no_check_certificate', $no_check );
 	}
 }

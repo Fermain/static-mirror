@@ -65,8 +65,9 @@ class Mirrorer {
 				sprintf( '--directory-prefix=%s', escapeshellarg( $temp_destination ) ),
 			);
 
-			// Allow bypassing cert check for local.
-			if ( defined( 'SM_NO_CHECK_CERT' ) && SM_NO_CHECK_CERT ) {
+			// Allow bypassing cert check for local (option or constant).
+			$no_check_opt = (int) get_option( 'static_mirror_no_check_certificate', 0 ) === 1;
+			if ( $no_check_opt || ( defined( 'SM_NO_CHECK_CERT' ) && SM_NO_CHECK_CERT ) ) {
 				$args[] = '--no-check-certificate';
 			}
 

@@ -12,12 +12,7 @@ class List_Table extends \WP_Posts_List_Table {
 	 *
 	 */
 	static public function enqueue_scripts() {
-		// JS
-		wp_enqueue_script( 'jquery-ui-datepicker' );
-		wp_enqueue_script( 'static-mirror-jquery-date-picker', SM_PLUGIN_URL . 'js/admin.js' );
-
-		// CSS
-		wp_enqueue_style( 'jquery-ui-datepicker', 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/themes/smoothness/jquery-ui.css' );
+		// No additional assets required when using native date inputs
 	}
 
 	public function prepare_items() {
@@ -186,11 +181,9 @@ class List_Table extends \WP_Posts_List_Table {
 			<input type="hidden" name="action" value="filter-date-range" />
 
 			<label for="date-from-<?php echo esc_attr( $which ); ?>"><?php esc_html_e( 'Date from:' ); ?></label>
-			<input id="date-from-<?php echo esc_attr( $which ); ?>" class="datepicker date-from"
-			       type="text" name="date-from" value="<?php echo esc_attr( $date['from'] ); ?>" />
+			<input id="date-from-<?php echo esc_attr( $which ); ?>" type="date" name="date-from" value="<?php echo esc_attr( $date['from'] ); ?>" />
 			<label for="date-to-<?php echo esc_attr( $which ); ?>"><?php esc_html_e( 'Date to:' ); ?></label>
-			<input id="date-to-<?php echo esc_attr( $which ); ?>" class="datepicker date-to"
-			       type="text" name="date-to" value="<?php echo esc_attr( $date['to'] ); ?>" />
+			<input id="date-to-<?php echo esc_attr( $which ); ?>" type="date" name="date-to" value="<?php echo esc_attr( $date['to'] ); ?>" />
 			<input type="hidden" name="page" value="<?php echo esc_attr( $_GET['page'] ) ?>" />
 
 			<?php

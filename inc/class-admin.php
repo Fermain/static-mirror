@@ -29,7 +29,23 @@ class Admin {
 	 * Add the Tools page page
 	 */
 	public function add_tools_page() {
-		add_submenu_page( 'tools.php', 'Static Mirrors', 'Static Mirror', 'static_mirror_manage_mirrors', 'static-mirror-tools-page', array( $this, 'output_tools_page' ) );
+		$hook = add_submenu_page( 'tools.php', 'Static Mirrors', 'Static Mirror', 'static_mirror_manage_mirrors', 'static-mirror-tools-page', array( $this, 'output_tools_page' ) );
+		add_action( 'load-' . $hook, array( $this, 'setup_tools_screen' ) );
+	}
+
+	public function setup_tools_screen() {
+		add_screen_option( 'per_page', array(
+			'label' => __( 'Mirrors per page', 'static-mirror' ),
+			'default' => 20,
+			'option' => 'edit_static-mirror_per_page',
+		) );
+
+		$screen = get_current_screen();
+		$screen->add_help_tab( array(
+			'id' => 'sm_overview',
+			'title' => __( 'Overview', 'static-mirror' ),
+			'content' => '<p>' . esc_html__( 'Use "Create Mirror Now" to generate a new snapshot. Configure crawling and exclusions under Tools → Static Mirror Settings. Filter the list by date range.', 'static-mirror' ) . '</p>',
+		) );
 	}
 
 	/**

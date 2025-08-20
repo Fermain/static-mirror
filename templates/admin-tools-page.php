@@ -20,77 +20,35 @@ $list_table->prepare_items();
 		<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'action', 'static-mirror-create-mirror' ), 'static-mirror-create' ) ); ?>" class="add-new-h2">Create Mirror Now</a>
 	</h2>
 
-	<form method="post" action="<?php echo esc_url( add_query_arg( 'page', $_GET['page'], 'tools.php' ) ) ?>">
-		<input type="hidden" name="action" value="update-static-mirror" />
-		<?php wp_nonce_field( 'static-mirror.update' ) ?>
-		<table class="form-table">
-			<tbody>
-				<tr>
-					<th scope="row">
-						<label for="static-mirror-urls">Starting URLs</label></th>
-					<td>
-						<textarea name="static-mirror-urls" id="static-mirror-urls" style="width: 300px; min-height: 100px" class="regular-text"><?php echo esc_textarea( implode("\n", Plugin::get_instance()->get_base_urls() ) ) ?></textarea>
-						<p class="description">All the different "sites" you want to create mirrors of.</p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
-						<label for="static-mirror-reject-patterns">URL Exclusion Patterns</label></th>
-					<td>
-						<textarea name="static-mirror-reject-patterns" id="static-mirror-reject-patterns" style="width: 300px; min-height: 100px" class="regular-text"><?php echo esc_textarea( get_option( 'static_mirror_reject_patterns', "" ) ); ?></textarea>
-						<p class="description">One per line. Regex (with delimiters) or substring. Merged into wget --reject-regex.</p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
-						<label for="static-mirror-resource-domains">Allowed resource domains</label></th>
-					<td>
-						<textarea name="static-mirror-resource-domains" id="static-mirror-resource-domains" style="width: 300px; min-height: 80px" class="regular-text"><?php echo esc_textarea( get_option( 'static_mirror_resource_domains', "" ) ); ?></textarea>
-						<p class="description">One host per line. Used with --span-hosts and --domains. Include primary host for safety.</p>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
-						<label for="static-mirror-crawler-cookies">Crawler cookies (key=value per line)</label></th>
-					<td>
-						<textarea name="static-mirror-crawler-cookies" id="static-mirror-crawler-cookies" style="width: 300px; min-height: 80px" class="regular-text"><?php echo esc_textarea( get_option( 'static_mirror_crawler_cookies', "" ) ); ?></textarea>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
-						<label for="static-mirror-user-agent">User-Agent</label></th>
-					<td>
-						<input type="text" name="static-mirror-user-agent" id="static-mirror-user-agent" class="regular-text" value="<?php echo esc_attr( get_option( 'static_mirror_user_agent', '' ) ); ?>" />
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
-						<label for="static-mirror-no-check-certificate">Skip TLS certificate verification</label></th>
-					<td>
-						<label>
-							<input type="checkbox" id="static-mirror-no-check-certificate" name="static-mirror-no-check-certificate" value="1" <?php \checked( (int) get_option( 'static_mirror_no_check_certificate', 0 ), 1 ); ?> />
-							Add --no-check-certificate to wget (useful for internal CAs)
-						</label>
-					</td>
-				</tr>
-				<tr>
-					<th scope="row">
-						<label for="static-mirror-robots-on">Respect robots.txt</label></th>
-					<td>
-						<label>
-							<input type="checkbox" id="static-mirror-robots-on" name="static-mirror-robots-on" value="1" <?php \checked( (int) get_option( 'static_mirror_robots_on', 0 ), 1 ); ?> />
-							Use wget robots=on (unchecked uses -erobots=off)
-						</label>
-					</td>
-				</tr>
-			</tbody>
-
-		</table>
-
-		<p class="submit">
-			<input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes">
-		</p>
-	</form>
+	<?php
+	// Build a preview of wget command using current settings
+	$sm_settings = get_option( 'static_mirror_settings', [] );
+	$ua = ! empty( $sm_settings['user_agent'] ) ? $sm_settings['user_agent'] : 'WordPress/Static-Mirror; ' . home_url();
+	$cookies = [];
+	if ( ! empty( $sm_settings['crawler_cookies'] ) ) {
+		foreach ( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $sm_settings['crawler_cookies'] ) ) ) as $line ) {
+			if ( strpos( $line, '=' ) !== false ) { $cookies[] = $line; }
+		}
+	}
+	$cookie_header = $cookies ? sprintf( "--header %s", esc_html( escapeshellarg( 'Cookie: ' . implode( ';', $cookies ) ) ) ) : '';
+	$robots = ! empty( $sm_settings['robots_on'] ) ? '--execute robots=on' : '-erobots=off';
+	$no_check = ! empty( $sm_settings['no_check_certificate'] ) ? '--no-check-certificate' : '';
+	$wait = ! empty( $sm_settings['wait_seconds'] ) ? sprintf( '--wait=%d', (int) $sm_settings['wait_seconds'] ) : '';
+	$rand = ! empty( $sm_settings['random_wait'] ) ? '--random-wait' : '';
+	$level = ! empty( $sm_settings['level'] ) ? sprintf( '--level=%d', (int) $sm_settings['level'] ) : '';
+	$reject = '';
+	if ( ! empty( $sm_settings['reject_patterns'] ) ) {
+		$reject = sprintf( '--reject-regex %s', esc_html( escapeshellarg( (string) $sm_settings['reject_patterns'] ) ) );
+	}
+	$ua_arg = sprintf( '--user-agent=%s', esc_html( escapeshellarg( $ua ) ) );
+	$preview_parts = array_filter( [ 'wget', $ua_arg, '--no-clobber', '--page-requisites', '--convert-links', '--backup-converted', $robots, '--restrict-file-names=windows', $reject, '--html-extension', '--content-on-error', '--trust-server-names', $cookie_header, $wait, $rand, $level ] );
+	?>
+	<div class="notice notice-info" style="padding:10px 12px;">
+		<strong>Preview:</strong>
+		<code style="display:block; overflow:auto; white-space:pre-wrap; word-break:break-all; margin-top:6px;">
+			<?php echo implode( ' ', $preview_parts ) . ' ' . esc_html( escapeshellarg( home_url( '/' ) ) ); ?>
+		</code>
+	</div>
 
 	<?php $list_table->display(); ?>
 </div>

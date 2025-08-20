@@ -76,20 +76,42 @@ class Mirrorer {
 
 			// Allow bypassing cert check for local (option or constant).
 			$no_check_opt = (int) get_option( 'static_mirror_no_check_certificate', 0 ) === 1;
+
 			if ( $no_check_opt || ( defined( 'SM_NO_CHECK_CERT' ) && SM_NO_CHECK_CERT ) ) {
 				$args[] = '--no-check-certificate';
 			}
 
-			$ua = get_option( 'static_mirror_user_agent', '' );
+			$ua = '';
+			$sm_settings = get_option( 'static_mirror_settings', array() );
+			if ( ! empty( $sm_settings['user_agent'] ) ) {
+				$ua = (string) $sm_settings['user_agent'];
+			} else {
+				$ua = get_option( 'static_mirror_user_agent', '' );
+			}
 			if ( $ua ) {
 				$args[0] = sprintf( '--user-agent=%s', escapeshellarg( $ua ) );
 			}
 
 			// Respect robots toggle
-			if ( (int) get_option( 'static_mirror_robots_on', 0 ) === 1 ) {
+			$robots_on_setting = isset( $sm_settings['robots_on'] ) ? (int) $sm_settings['robots_on'] : (int) get_option( 'static_mirror_robots_on', 0 );
+			if ( $robots_on_setting === 1 ) {
 				$args[] = '--execute robots=on';
 			} else {
 				$args[] = '-erobots=off';
+			}
+
+			// Add wait/random-wait and level args based on consolidated settings.
+			$wait_time = isset( $sm_settings['wait_seconds'] ) ? (int) $sm_settings['wait_seconds'] : (int) get_option( 'static_mirror_wait_time', 0 );
+			if ( $wait_time > 0 ) {
+				$args[] = sprintf( '--wait=%d', $wait_time );
+			}
+			$random_wait = isset( $sm_settings['random_wait'] ) ? (int) $sm_settings['random_wait'] : (int) get_option( 'static_mirror_random_wait', 0 );
+			if ( $random_wait > 0 ) {
+				$args[] = '--random-wait';
+			}
+			$level = isset( $sm_settings['level'] ) ? (int) $sm_settings['level'] : (int) get_option( 'static_mirror_level', 0 );
+			if ( $level > 0 ) {
+				$args[] = sprintf( '--level=%d', $level );
 			}
 
 			$cmd = sprintf( 'wget %s %s 2>&1', implode( ' ', $args ), escapeshellarg( esc_url_raw( $url ) ) );

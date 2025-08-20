@@ -36,7 +36,22 @@ class Plugin {
 	 * @return Array
 	 */
 	public function get_base_urls() {
-		return apply_filters( 'static_mirror_base_urls', get_option( 'static_mirror_base_urls', array( home_url() ) ) );
+		$settings = get_option( 'static_mirror_settings', array() );
+		$urls = array();
+		if ( ! empty( $settings['starting_urls'] ) && is_array( $settings['starting_urls'] ) ) {
+			$urls = $settings['starting_urls'];
+		} else {
+			$old_urls = get_option( 'static_mirror_base_urls', null );
+			if ( ! empty( $old_urls ) && is_array( $old_urls ) ) {
+				$urls = $old_urls;
+				$settings['starting_urls'] = array_values( array_filter( array_map( 'esc_url_raw', $old_urls ) ) );
+				update_option( 'static_mirror_settings', $settings );
+				delete_option( 'static_mirror_base_urls' );
+			} else {
+				$urls = array( home_url() );
+			}
+		}
+		return apply_filters( 'static_mirror_base_urls', $urls );
 	}
 
 	/**
@@ -46,6 +61,9 @@ class Plugin {
 	 */
 	public function set_base_urls( Array $urls ) {
 		update_option( 'static_mirror_base_urls', $urls );
+		$settings = get_option( 'static_mirror_settings', array() );
+		$settings['starting_urls'] = array_values( array_filter( array_map( 'esc_url_raw', $urls ) ) );
+		update_option( 'static_mirror_settings', $settings );
 	}
 
 	/**
@@ -115,7 +133,22 @@ class Plugin {
 		}
 
 		if ( ! wp_next_scheduled( 'static_mirror_create_mirror' ) ) {
-			wp_schedule_event( $this->get_daily_schedule_time(), 'daily', 'static_mirror_create_mirror' );
+			$settings = get_option( 'static_mirror_settings', [] );
+			$time = isset( $settings['schedule_time'] ) ? (string) $settings['schedule_time'] : '';
+			$freq = isset( $settings['schedule_frequency'] ) ? (string) $settings['schedule_frequency'] : 'daily';
+			$timestamp = $this->get_daily_schedule_time();
+			if ( preg_match( '/^\d{2}:\d{2}$/', $time ) ) {
+				list( $h, $m ) = array_map( 'intval', explode( ':', $time ) );
+				$today = current_time( 'timestamp' );
+				$target = mktime( $h, $m, 0, (int) date( 'n', $today ), (int) date( 'j', $today ), (int) date( 'Y', $today ) );
+				if ( $target <= $today ) { $target = strtotime( '+1 day', $target ); }
+				$timestamp = $target;
+			}
+			add_filter( 'cron_schedules', function( $s ) {
+				if ( ! isset( $s['weekly'] ) ) $s['weekly'] = [ 'interval' => 7 * DAY_IN_SECONDS, 'display' => __( 'Once Weekly' ) ];
+				return $s;
+			} );
+			wp_schedule_event( $timestamp, ( $freq === 'weekly' ? 'weekly' : 'daily' ), 'static_mirror_create_mirror' );
 		}
 
 		if ( ! wp_next_scheduled( 'static_mirror_delete_expired_mirrors' ) ) {
@@ -343,7 +376,14 @@ class Plugin {
 		$start_time = time();
 
 		$destination = $this->get_destination_directory() . date( '/Y/m/j/H-i-s/' );
-		$mirrorer->create( $urls, $destination, $recursive );
+		$settings = get_option( 'static_mirror_settings', array() );
+		$recursive_flag = $recursive;
+		if ( $recursive ) {
+			$recursive_flag = isset( $settings['recursive_scheduled'] ) ? (bool) $settings['recursive_scheduled'] : true;
+		} else {
+			$recursive_flag = isset( $settings['recursive_immediate'] ) ? (bool) $settings['recursive_immediate'] : false;
+		}
+		$mirrorer->create( $urls, $destination, $recursive_flag );
 
 		/**
 		 * Running mirror() probably took quite a while, so lets

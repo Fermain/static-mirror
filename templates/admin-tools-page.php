@@ -40,12 +40,11 @@ $list_table->prepare_items();
 	$reject = $reject_pattern !== '' ? sprintf( '--reject-regex %s', esc_html( escapeshellarg( $reject_pattern ) ) ) : '';
 	$ua_arg = sprintf( '--user-agent=%s', esc_html( escapeshellarg( $ua ) ) );
 	$preview_parts = array_filter( [ 'wget', $ua_arg, '--no-clobber', '--page-requisites', '--convert-links', '--backup-converted', $robots, '--restrict-file-names=windows', $reject, '--html-extension', '--content-on-error', '--trust-server-names', $cookie_header, $wait, $rand, $level ] );
+	$preview_cmd = implode( ' ', $preview_parts ) . ' ' . esc_html( escapeshellarg( home_url( '/' ) ) );
 	?>
 	<div class="notice notice-info" style="padding:10px 12px;">
 		<strong>Preview:</strong>
-		<code style="display:block; overflow:auto; white-space:pre-wrap; word-break:break-all; margin-top:6px;">
-			<?php echo implode( ' ', $preview_parts ) . ' ' . esc_html( escapeshellarg( home_url( '/' ) ) ); ?>
-		</code>
+		<code style="display:block; overflow:auto; white-space:pre-wrap; word-break:break-all; margin-top:6px;"><?php echo $preview_cmd; ?></code>
 	</div>
 
 	<?php $list_table->display(); ?>

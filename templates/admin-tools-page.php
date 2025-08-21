@@ -45,6 +45,9 @@ $list_table->prepare_items();
 	<div class="notice notice-info" style="padding:10px 12px;">
 		<strong>Preview:</strong>
 		<code style="display:block; overflow:auto; white-space:pre-wrap; word-break:break-all; margin-top:6px;"><?php echo $preview_cmd; ?></code>
+		<?php if ( $reject === '' ) : ?>
+			<p class="description" style="margin:6px 0 0;">No URL exclusion patterns configured.</p>
+		<?php endif; ?>
 	</div>
 
 	<?php $list_table->display(); ?>

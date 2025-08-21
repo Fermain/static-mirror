@@ -54,24 +54,35 @@ class Mirrorer {
 			$allowed_domains = $resource_domains;
 			$allowed_domains[] = parse_url( $url )['host'];
 
+			$reject_arg = self::build_reject_regex_arg();
+
 			// Wget args. Broken into an array for better readability.
 			$args = array(
 				sprintf( '--user-agent="%s"', 'WordPress/Static-Mirror; ' . get_bloginfo( 'url' ) ),
-				'--no-clobber', // Prevent multiple versions of files, don't download a file if already exists.
-				'--page-requisites', // Download all necessary files.
-				'--convert-links', // Rewrite links so the downloaded version is functional and independent of original.
-				'--backup-converted', // Keep copy of file prior to converting links as this is mangling image srccset.
+				'--no-clobber',
+				'--page-requisites',
+				'--convert-links',
+				'--backup-converted',
 				sprintf( '%s', $recursive ? '--recursive' : '' ),
 				'--restrict-file-names=windows',
-				self::build_reject_regex_arg(),
 				'--html-extension',
 				'--content-on-error',
-				'--trust-server-names', // Prevent duplicate files for redirected pages.
+				'--trust-server-names',
 				sprintf( '--header %s', escapeshellarg( 'Cookie: ' . $cookie_string ) ),
 				'--span-hosts',
-				sprintf( '--domains=%s', escapeshellarg( implode( ',', $allowed_domains ) ) ), // Given span hosts, restrict to defined domains.
+				sprintf( '--domains=%s', escapeshellarg( implode( ',', $allowed_domains ) ) ),
 				sprintf( '--directory-prefix=%s', escapeshellarg( $temp_destination ) ),
 			);
+
+			if ( $reject_arg !== '' ) {
+				// Insert reject arg after restrict-file-names for readability
+				$pos = array_search( '--restrict-file-names=windows', $args, true );
+				if ( $pos !== false ) {
+					array_splice( $args, $pos + 1, 0, [ $reject_arg ] );
+				} else {
+					$args[] = $reject_arg;
+				}
+			}
 
 			// Allow bypassing cert check for local (option or constant).
 			$no_check_opt = (int) get_option( 'static_mirror_no_check_certificate', 0 ) === 1;
@@ -269,6 +280,9 @@ class Mirrorer {
 	 */
 	private static function build_reject_regex_arg() {
 		$joined = self::build_reject_regex_pattern();
+		if ( $joined === '' ) {
+			return '';
+		}
 		return sprintf( '--reject-regex %s', escapeshellarg( $joined ) );
 	}
 
@@ -284,7 +298,10 @@ class Mirrorer {
 		$raw = (string) get_option( 'static_mirror_reject_patterns', '' );
 		$user_lines = array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $raw ) ) );
 
-		$patterns = $defaults;
+		$patterns = [];
+		if ( empty( $user_lines ) ) {
+			$patterns = $defaults;
+		}
 		foreach ( $user_lines as $line ) {
 			if ( $line === '' ) { continue; }
 			// If looks like delimited regex, strip delimiters; else use raw (presets are ERE-safe).

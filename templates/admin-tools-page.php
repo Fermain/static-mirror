@@ -31,7 +31,7 @@ $list_table->prepare_items();
 		}
 	}
 	$cookie_header = $cookies ? sprintf( "--header %s", esc_html( escapeshellarg( 'Cookie: ' . implode( ';', $cookies ) ) ) ) : '';
-	$robots = ! empty( $sm_settings['robots_on'] ) ? '--execute robots=on' : '-erobots=off';
+	$robots = ! empty( $sm_settings['robots_on'] ) ? '--execute robots=on' : '--execute robots=off';
 	$no_check = ! empty( $sm_settings['no_check_certificate'] ) ? '--no-check-certificate' : '';
 	$wait = ! empty( $sm_settings['wait_seconds'] ) ? sprintf( '--wait=%d', (int) $sm_settings['wait_seconds'] ) : '';
 	$rand = ! empty( $sm_settings['random_wait'] ) ? '--random-wait' : '';

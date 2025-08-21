@@ -62,7 +62,6 @@ class Mirrorer {
 				'--convert-links', // Rewrite links so the downloaded version is functional and independent of original.
 				'--backup-converted', // Keep copy of file prior to converting links as this is mangling image srccset.
 				sprintf( '%s', $recursive ? '--recursive' : '' ),
-				'-erobots=off', // Ignore robots.
 				'--restrict-file-names=windows',
 				self::build_reject_regex_arg(),
 				'--html-extension',
@@ -97,7 +96,7 @@ class Mirrorer {
 			if ( $robots_on_setting === 1 ) {
 				$args[] = '--execute robots=on';
 			} else {
-				$args[] = '-erobots=off';
+				$args[] = '--execute robots=off';
 			}
 
 			// Add wait/random-wait and level args based on consolidated settings.

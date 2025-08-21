@@ -225,6 +225,23 @@ class Plugin {
 		}, 10, 6 );
 	}
 
+	public function dry_run_now() {
+		if ( ! current_user_can( 'static_mirror_manage_mirrors' ) ) {
+			wp_die( __( 'You do not have permission to perform this action.', 'static-mirror' ) );
+		}
+		if ( empty( $_GET['_wpnonce'] ) || ! wp_verify_nonce( $_GET['_wpnonce'], 'static-mirror-dry-run' ) ) {
+			wp_die( __( 'Failed to verify nonce, sorry', 'static-mirror' ) );
+		}
+		$urls = $this->get_base_urls();
+		$settings = get_option( 'static_mirror_settings', [] );
+		$recursive = isset( $settings['recursive_immediate'] ) ? (bool) $settings['recursive_immediate'] : false;
+		$mirrorer = new Mirrorer();
+		$result = $mirrorer->dry_run( $urls, $recursive );
+		set_transient( 'static_mirror_last_dry_run', $result, 5 * MINUTE_IN_SECONDS );
+		wp_safe_redirect( admin_url( 'admin.php?page=static-mirror' ) );
+		exit;
+	}
+
 	public function setup_capabilities() {
 
 		if ( get_option( 'static_mirror_added_roles' ) ) {

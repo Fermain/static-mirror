@@ -140,6 +140,85 @@ class Mirrorer {
 	}
 
 	/**
+	 * Perform a dry-run crawl using wget --spider. Returns summary info.
+	 *
+	 * @param array $urls
+	 * @param bool $recursive
+	 * @return array{cmd:string,codes:array,rejects:int,raw:string}
+	 */
+	public function dry_run( array $urls, bool $recursive ) : array {
+		$settings = get_option( 'static_mirror_settings', [] );
+		$ua = ! empty( $settings['user_agent'] ) ? (string) $settings['user_agent'] : ( 'WordPress/Static-Mirror; ' . home_url() );
+		$cookie_header = '';
+		if ( ! empty( $settings['crawler_cookies'] ) ) {
+			$cookies = [];
+			foreach ( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $settings['crawler_cookies'] ) ) ) as $line ) {
+				if ( strpos( $line, '=' ) !== false ) { $cookies[] = $line; }
+			}
+			if ( ! empty( $cookies ) ) {
+				$cookie_header = sprintf( '--header %s', escapeshellarg( 'Cookie: ' . implode( ';', $cookies ) ) );
+			}
+		}
+
+		$reject_arg = self::build_reject_regex_arg();
+		$robots_on = ! empty( $settings['robots_on'] );
+		$level = isset( $settings['level'] ) ? (int) $settings['level'] : 0;
+
+		$allowed_domains = [];
+		if ( ! empty( $settings['resource_domains'] ) ) {
+			foreach ( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', (string) $settings['resource_domains'] ) ) ) as $host ) {
+				$host = preg_replace( '/^https?:\/\//', '', $host );
+				$host = rtrim( $host, '/' );
+				if ( $host !== '' ) { $allowed_domains[] = $host; }
+			}
+		}
+
+		$cmd_parts = [
+			'wget',
+			sprintf( '--user-agent=%s', escapeshellarg( $ua ) ),
+			'--spider',
+			$robots_on ? '--execute robots=on' : '--execute robots=off',
+			$reject_arg,
+			$cookie_header,
+			'--span-hosts',
+		];
+		if ( $recursive ) { $cmd_parts[] = '--recursive'; }
+		if ( $level > 0 ) { $cmd_parts[] = sprintf( '--level=%d', $level ); }
+		if ( ! empty( $allowed_domains ) ) {
+			$cmd_parts[] = sprintf( '--domains=%s', escapeshellarg( implode( ',', $allowed_domains ) ) );
+		}
+
+		$cmd_parts = array_values( array_filter( $cmd_parts ) );
+
+		$full_cmds = [];
+		foreach ( $urls as $url ) {
+			$full_cmds[] = sprintf( '%s %s 2>&1', implode( ' ', $cmd_parts ), escapeshellarg( esc_url_raw( $url ) ) );
+		}
+
+		$raw_output = '';
+		foreach ( $full_cmds as $cmd ) {
+			$raw_output .= shell_exec( $cmd ) ?: '';
+			$raw_output .= "\n";
+		}
+
+		$codes = [];
+		if ( preg_match_all( '/\s(\d{3})\s/', $raw_output, $m ) ) {
+			foreach ( $m[1] as $code ) {
+				$code = (string) $code;
+				$codes[$code] = isset( $codes[$code] ) ? $codes[$code] + 1 : 1;
+			}
+		}
+		$rejects = substr_count( $raw_output, 'Rejecting' );
+
+		return [
+			'cmd' => implode( ' && ', $full_cmds ),
+			'codes' => $codes,
+			'rejects' => $rejects,
+			'raw' => $raw_output,
+		];
+	}
+
+	/**
 	 * Copies contents from $source to $dest, optionally ignoring SVN meta-data
 	 * folders (default).
 	 * @param string $source

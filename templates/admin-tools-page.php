@@ -18,6 +18,7 @@ $list_table->prepare_items();
 	<h2 class="page-title">
 		Static Mirrors
 		<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'action', 'static-mirror-create-mirror' ), 'static-mirror-create' ) ); ?>" class="add-new-h2">Create Mirror Now</a>
+		<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( 'action', 'static-mirror-dry-run' ), 'static-mirror-dry-run' ) ); ?>" class="add-new-h2">Dry Run</a>
 	</h2>
 
 	<?php
@@ -49,6 +50,17 @@ $list_table->prepare_items();
 			<p class="description" style="margin:6px 0 0;">No URL exclusion patterns configured.</p>
 		<?php endif; ?>
 	</div>
+
+	<?php if ( ( $dry = get_transient( 'static_mirror_last_dry_run' ) ) ) : ?>
+		<div class="notice notice-success" style="padding:10px 12px;">
+			<strong>Dry Run Summary</strong>
+			<pre style="white-space:pre-wrap;word-break:break-word;">
+Command: <?php echo esc_html( $dry['cmd'] ); ?>
+HTTP codes: <?php foreach ( (array) $dry['codes'] as $code => $cnt ) { echo esc_html( "$code:$cnt " ); } ?>
+Rejected: <?php echo isset( $dry['rejects'] ) ? intval( $dry['rejects'] ) : 0; ?>
+			</pre>
+		</div>
+	<?php endif; ?>
 
 	<?php $list_table->display(); ?>
 </div>

@@ -65,6 +65,8 @@ class Admin {
 		);
 
 		add_action( 'load-' . $mirrors_hook, array( $this, 'setup_tools_screen' ) );
+		// Register dry run handler
+		add_action( 'admin_action_static-mirror-dry-run', [ Plugin::get_instance(), 'dry_run_now' ] );
 
 		$settings_hook = add_submenu_page(
 			'static-mirror',

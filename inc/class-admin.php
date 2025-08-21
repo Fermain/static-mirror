@@ -136,23 +136,13 @@ class Admin {
 		$no_check = isset( $_POST['static-mirror-no-check-certificate'] ) ? 1 : 0;
 		update_option( 'static_mirror_no_check_certificate', $no_check );
 
-		$reject_patterns = isset( $_POST['static-mirror-reject-patterns'] ) ? (string) $_POST['static-mirror-reject-patterns'] : '';
-		$reject_patterns = preg_replace( '/^\s+|\s+$/m', '', $reject_patterns );
-		update_option( 'static_mirror_reject_patterns', $reject_patterns );
-
-		$resource_domains = isset( $_POST['static-mirror-resource-domains'] ) ? (string) $_POST['static-mirror-resource-domains'] : '';
-		$resource_domains = preg_replace( '/^\s+|\s+$/m', '', $resource_domains );
-		update_option( 'static_mirror_resource_domains', $resource_domains );
-
-		$crawler_cookies = isset( $_POST['static-mirror-crawler-cookies'] ) ? (string) $_POST['static-mirror-crawler-cookies'] : '';
-		$crawler_cookies = preg_replace( '/^\s+|\s+$/m', '', $crawler_cookies );
-		update_option( 'static_mirror_crawler_cookies', $crawler_cookies );
-
-		$user_agent = isset( $_POST['static-mirror-user-agent'] ) ? (string) $_POST['static-mirror-user-agent'] : '';
-		update_option( 'static_mirror_user_agent', sanitize_text_field( $user_agent ) );
-
-		$robots_on = isset( $_POST['static-mirror-robots-on'] ) ? 1 : 0;
-		update_option( 'static_mirror_robots_on', $robots_on );
+		$settings = get_option( 'static_mirror_settings', [] );
+		$settings['reject_patterns'] = isset( $_POST['static-mirror-reject-patterns'] ) ? trim( (string) $_POST['static-mirror-reject-patterns'] ) : '';
+		$settings['resource_domains'] = isset( $_POST['static-mirror-resource-domains'] ) ? trim( (string) $_POST['static-mirror-resource-domains'] ) : '';
+		$settings['crawler_cookies'] = isset( $_POST['static-mirror-crawler-cookies'] ) ? trim( (string) $_POST['static-mirror-crawler-cookies'] ) : '';
+		$settings['user_agent'] = isset( $_POST['static-mirror-user-agent'] ) ? sanitize_text_field( (string) $_POST['static-mirror-user-agent'] ) : '';
+		$settings['robots_on'] = isset( $_POST['static-mirror-robots-on'] ) ? 1 : 0;
+		update_option( 'static_mirror_settings', $settings );
 	}
 
 	/**
@@ -176,7 +166,7 @@ class Admin {
 		add_settings_field( 'robots_on', __( 'Respect robots.txt', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_crawling', array( 'key' => 'robots_on' ) );
 		add_settings_field( 'no_check_certificate', __( 'Skip TLS certificate verification', 'static-mirror' ), array( $this, 'field_checkbox' ), 'static-mirror-settings', 'sm_section_crawling', array( 'key' => 'no_check_certificate' ) );
 
-		add_settings_field( 'reject_patterns', __( 'URL Exclusion Patterns', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_exclusions', array( 'key' => 'reject_patterns', 'desc' => __( 'Regex (with delimiters) or substring, one per line.', 'static-mirror' ) ) );
+		add_settings_field( 'reject_patterns', __( 'URL Exclusion Patterns', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_exclusions', array( 'key' => 'reject_patterns', 'desc' => __( 'Regex (POSIX ERE) or substring, one per line.', 'static-mirror' ) ) );
 
 		add_settings_field( 'resource_domains', __( 'Allowed resource domains', 'static-mirror' ), array( $this, 'field_textarea' ), 'static-mirror-settings', 'sm_section_resources', array( 'key' => 'resource_domains', 'desc' => __( 'One host per line.', 'static-mirror' ) ) );
 
@@ -219,11 +209,11 @@ class Admin {
 		$defaults = array(
 			'starting_urls' => array( home_url() ),
 			'user_agent' => 'WordPress/Static-Mirror; ' . home_url(),
-			'crawler_cookies' => (string) get_option( 'static_mirror_crawler_cookies', '' ),
-			'robots_on' => (int) get_option( 'static_mirror_robots_on', 0 ),
-			'no_check_certificate' => (int) get_option( 'static_mirror_no_check_certificate', 0 ),
-			'reject_patterns' => (string) get_option( 'static_mirror_reject_patterns', '' ),
-			'resource_domains' => (string) get_option( 'static_mirror_resource_domains', '' ),
+			'crawler_cookies' => '',
+			'robots_on' => 0,
+			'no_check_certificate' => 0,
+			'reject_patterns' => '',
+			'resource_domains' => '',
 			'wait_seconds' => 0,
 			'random_wait' => 0,
 			'level' => 0,

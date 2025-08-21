@@ -4,7 +4,7 @@
 Plugin Name: Static Mirror
 Description: Create a static mirror of your site
 Author: Human Made Limited
-Version: 1.1
+Version: 2.0.0
 Author URI: https://humanmade.com
 */
 

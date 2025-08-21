@@ -295,13 +295,11 @@ class Mirrorer {
 			'.+\/wp-json\/?(.+)?$',
 		];
 
-		// Prefer consolidated settings option, fallback to legacy option if not set.
+		// Read from consolidated settings only
 		$settings = get_option( 'static_mirror_settings', [] );
 		$raw = '';
 		if ( is_array( $settings ) && array_key_exists( 'reject_patterns', $settings ) ) {
 			$raw = (string) $settings['reject_patterns'];
-		} else {
-			$raw = (string) get_option( 'static_mirror_reject_patterns', '' );
 		}
 
 		$user_lines = array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $raw ) ) );

@@ -36,10 +36,8 @@ $list_table->prepare_items();
 	$wait = ! empty( $sm_settings['wait_seconds'] ) ? sprintf( '--wait=%d', (int) $sm_settings['wait_seconds'] ) : '';
 	$rand = ! empty( $sm_settings['random_wait'] ) ? '--random-wait' : '';
 	$level = ! empty( $sm_settings['level'] ) ? sprintf( '--level=%d', (int) $sm_settings['level'] ) : '';
-	$reject = '';
-	if ( ! empty( $sm_settings['reject_patterns'] ) ) {
-		$reject = sprintf( '--reject-regex %s', esc_html( escapeshellarg( (string) $sm_settings['reject_patterns'] ) ) );
-	}
+	$reject_pattern = \Static_Mirror\Mirrorer::build_reject_regex_pattern();
+	$reject = $reject_pattern !== '' ? sprintf( '--reject-regex %s', esc_html( escapeshellarg( $reject_pattern ) ) ) : '';
 	$ua_arg = sprintf( '--user-agent=%s', esc_html( escapeshellarg( $ua ) ) );
 	$preview_parts = array_filter( [ 'wget', $ua_arg, '--no-clobber', '--page-requisites', '--convert-links', '--backup-converted', $robots, '--restrict-file-names=windows', $reject, '--html-extension', '--content-on-error', '--trust-server-names', $cookie_header, $wait, $rand, $level ] );
 	?>

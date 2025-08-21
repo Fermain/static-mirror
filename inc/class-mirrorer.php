@@ -269,6 +269,14 @@ class Mirrorer {
 	 * Build wget --reject-regex argument from defaults and admin-provided patterns.
 	 */
 	private static function build_reject_regex_arg() {
+		$joined = self::build_reject_regex_pattern();
+		return sprintf( '--reject-regex %s', escapeshellarg( $joined ) );
+	}
+
+	/**
+	 * Build the joined POSIX ERE pattern used for --reject-regex.
+	 */
+	public static function build_reject_regex_pattern() : string {
 		$defaults = [
 			'.+\/feed\/?$',
 			'.+\/wp-json\/?(.+)?$',
@@ -279,8 +287,8 @@ class Mirrorer {
 
 		$patterns = $defaults;
 		foreach ( $user_lines as $line ) {
-			if ( $line === '' ) continue;
-			// If looks like delimited regex, strip delimiters; else escape as a substring.
+			if ( $line === '' ) { continue; }
+			// If looks like delimited regex, strip delimiters; else use raw (presets are ERE-safe).
 			if ( preg_match( '/^(.).+\1[imsxuADSUXJ]*$/', $line ) ) {
 				$delim = substr( $line, 0, 1 );
 				$last = strrpos( $line, $delim );
@@ -289,11 +297,10 @@ class Mirrorer {
 					$patterns[] = $body;
 				}
 			} else {
-				$patterns[] = preg_quote( $line, '/' );
+				$patterns[] = $line;
 			}
 		}
 
-		$joined = implode( '|', $patterns );
-		return sprintf( '--reject-regex %s', escapeshellarg( $joined ) );
+		return implode( '|', $patterns );
 	}
 }
